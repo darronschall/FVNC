@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * FVNC: A VNC Client for Flash Player 9 and above
+ * Copyright (C) 2005-2007 Darron Schall <darron@darronschall.com>
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307 USA
+-->
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:fvnc="http://www.osflash.org/fvnc"
+	xmlns:view="fvnc.view.*"
+	layout="vertical">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import fvnc.view.AuthenticationPanel;
+			import mx.managers.PopUpManager;
+			import fvnc.events.FVNCEvent;
+			import fvnc.events.ConnectEvent;
+			
+			/**
+			 *
+			 */
+			private function handleConnect( event:ConnectEvent ):void
+			{
+				remoteScreen.host = event.host;
+				remoteScreen.port = event.port;
+				remoteScreen.fitToScreen = event.fitToScreen;
+				
+				// TODO: Try/catch doesn't work for connection here because
+				// the socket is async.  Better approach is going to be to have
+				// the FVNC component dispatch a ConnectionErrorEvent when
+				// an error is detected.
+				try
+				{
+					remoteScreen.connect();
+					connectionPanel.connected = true;
+					
+					// Focus the VNC screen so keyboard events are registered
+					stage.focus = remoteScreen;	
+				}
+				catch ( e:Error )
+				{
+					Alert.show( e.message, "Error" );
+					connectionPanel.connected = false;
+				}
+				
+			}
+			
+			/**
+			 *
+			 */
+			private function handleClose( event:Event ):void
+			{
+				remoteScreen.close();
+				connectionPanel.connected = false;
+			}
+			
+			/**
+			 *
+			 */
+			private function handlePasswordRequired( event:FVNCEvent ):void
+			{
+				var popup:AuthenticationPanel = AuthenticationPanel( PopUpManager.createPopUp( this, AuthenticationPanel, true ) );
+				PopUpManager.centerPopUp( popup );
+				
+				popup.addEventListener( "submit", handlePasswordEntered, false, 0, true );
+			}
+			
+			/**
+			 *
+			 */
+			private function handlePasswordEntered( event:Event ):void
+			{
+				var popup:AuthenticationPanel = AuthenticationPanel( event.target );
+				
+				remoteScreen.password = popup.password;
+				PopUpManager.removePopUp( popup );
+			}
+		]]>
+	</mx:Script>
+	
+	<view:ConnectionPanel id="connectionPanel"
+		connect="handleConnect( event );"
+		close="handleClose( event );" />
+	
+	<!-- 
+		TODO: Implement a resize event handler to resize window in fitToScreen mode? Best place
+		for this is probably in the FVNC component itself. 
+	-->
+	<fvnc:FVNC id="remoteScreen" width="100%" height="100%"
+		passwordRequired="handlePasswordRequired( event );"
+		keyFocusChange="event.preventDefault();"
+		mouseFocusChange="event.preventDefault();" />
+	
+</mx:Application>

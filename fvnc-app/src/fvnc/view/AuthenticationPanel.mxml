@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * FVNC: A VNC Client for Flash Player 9 and above
+ * Copyright (C) 2005-2007 Darron Schall <darron@darronschall.com>
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307 USA
+-->
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns="*"
+	width="220" height="140"
+	horizontalAlign="center"
+	title="Enter Password"
+	creationComplete="initializeComponents();">
+    
+    <mx:Metadata>
+    	[Event( name="submit", type="flash.events.Event" )]
+    </mx:Metadata>
+    
+    <mx:Script>
+    	<![CDATA[	    	
+	    	/**
+			 * Runs initialization when the panel is first created and displayed.
+			 */
+			 private function initializeComponents():void
+			 {
+	    		passwordText.setFocus();
+	    	}
+	    	
+	    	/**
+	    	 * Event handler: Whenever the form is marked as ok to be
+	    	 * submitted (either button press, or enter press), send
+	    	 * out a password event containing the information entered
+	    	 * in the form.
+	    	 */
+	    	private function onOk():void
+	    	{
+	    		// Make sure the form is valid before processing
+	    		if ( ok.enabled )
+	    		{
+	    			// Send out a password event containing the 
+	    			// password the user entered to anyone interested
+	    			dispatchEvent( new Event( "submit" ) );
+	    		}
+	    	}
+	    	
+	    	public function get password():String
+	    	{
+	    		return passwordText.text;
+	    	}
+    	
+    	]]>
+    </mx:Script>
+    
+    <mx:Form width="100%" defaultButton="{ ok }">
+    
+    	<mx:FormItem id="passwordItem" label="Password:">
+    		<mx:TextInput id="passwordText" displayAsPassword="true" width="80" />
+    	</mx:FormItem>
+    	
+    </mx:Form>
+    
+    <mx:Button id="ok" label="OK" click="onOk();" enabled="{ passwordText.text.length > 0 }" />
+    
+</mx:TitleWindow>

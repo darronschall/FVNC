@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * FVNC: A VNC Client for Flash Player 9 and above
+ * Copyright (C) 2005-2007 Darron Schall <darron@darronschall.com>
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307 USA
+-->		
+<mx:Panel 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns="*"
+	horizontalAlign="right" title="FVNC: Connection Details"
+	layout="horizontal"
+	creationComplete="initializeComponents();">
+	
+	<mx:Metadata>
+		/**
+		 * @eventType vnc.events.ConnectEvent.CONNECT
+		 */
+		[Event( name="connect", type="fvnc.events.ConnectEvent" )]
+		
+		[Event( name="close", type="flash.events.Event" )]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+
+			import flash.net.SharedObject;
+			import fvnc.events.ConnectEvent;
+			
+			/** A local shared object to store connection information */
+			private var cache:SharedObject;
+			
+			private var _connected:Boolean = false;
+			protected var connectedChanged:Boolean = false;
+			
+			public function get connected():Boolean
+			{
+				return _connected;
+			}
+			public function set connected( value:Boolean ):void
+			{
+				_connected = value;
+				connectedChanged = true;
+				
+				invalidateProperties();
+			}
+			
+			protected override function commitProperties():void
+			{
+				super.commitProperties();
+				
+				if ( connectedChanged )
+				{
+					connectedChanged = false;
+					
+					fitToScreen.enabled = port.enabled = server.enabled = !connected;
+					connectButton.label = connected ? "Disconnect" : "Connect";
+				}
+			}
+			
+			/**
+			 * Runs initialization when the panel is first created and displayed.
+			 */
+			private function initializeComponents():void
+			{
+				// TODO: This is the wrong place for this code, should refactor
+				
+				// Get a list of shared servers from the saved information and
+				// auto-populate the form
+				cache = SharedObject.getLocal( "fvnc.cache" );
+				port.text = cache.data.port == null ? "5900" : cache.data.port;
+				
+				if ( cache.data.servers == null )
+				{
+					// No saved servers, use a default value of empty
+					//server.dataProvider = [ "192.168.1.100" ];
+				}
+				else
+				{
+					// Populate the drop down with the list of saved servers
+					server.dataProvider = String( cache.data.servers ).split( "," );
+				}
+			}
+	
+			/**
+			 * Event handler:  Called when the connect button is clicked.
+			 * Fire off a ConnectEvent to anyone interested
+			 */
+			public function handleConnect():void
+			{
+				if ( !connected )
+				{
+					// Create a new event to send off
+					var ce:ConnectEvent = new ConnectEvent();
+					// Populate event with data from the for
+					ce.host = server.text;
+					ce.port = parseInt( port.text );
+					ce.fitToScreen = fitToScreen.selected;
+					
+					// Save the data in the cache
+					updateSharedObject();
+					
+					// Send off the event to listeners
+					dispatchEvent( ce );
+				}
+				else
+				{
+					dispatchEvent( new Event( Event.CLOSE ) );
+				}
+				
+			}
+	
+			/**
+			 * Updates the cache to store the port and server
+			 */
+			private function updateSharedObject():void
+			{
+				// TODO: This is the wrong place for this code, should refactor
+				
+				cache.data.port = port.text;
+				
+				var obj:Object = new Object();
+				for ( var i:int = 0; i < server.dataProvider.length; i++ )
+				{
+					obj[ server.dataProvider[i] ] = "";	
+				}
+				
+				obj[ server.text ] = "";
+				var serverList:Array = new Array();
+				for ( var prop:String in obj )
+				{
+					serverList.push( prop );
+				}
+				
+				cache.data.servers = serverList.join( "," ); 
+				cache.flush();
+			}
+
+		]]>
+	</mx:Script>
+	
+	<mx:FormItem id="serverItem" label="Server:">
+		<mx:ComboBox id="server" editable="true" width="150" />
+	</mx:FormItem>
+	
+	<mx:FormItem id="portItem" label="Port:">
+		<mx:TextInput id="port" width="50" />
+	</mx:FormItem>
+	
+	<mx:FormItem id="fitItem" label="Size:">
+		<mx:CheckBox id="fitToScreen" label="Fit to Screen?"/>
+	</mx:FormItem>
+	
+	<mx:FormItem horizontalAlign="right" width="100%">
+		<mx:Button id="connectButton" label="Connect" click="handleConnect();" />
+	</mx:FormItem>
+
+</mx:Panel>
