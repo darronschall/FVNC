@@ -19,7 +19,7 @@
  * 02111-1307 USA
 -->
 <mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
-	xmlns:fvnc="http://www.osflash.org/fvnc"
+	xmlns:fvnc="http://fvnc.googlecode.com/fvnc"
 	xmlns:view="fvnc.view.*"
 	layout="vertical">
 	
