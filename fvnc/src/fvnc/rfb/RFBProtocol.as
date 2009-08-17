@@ -162,6 +162,7 @@ public class RFBProtocol extends Socket {
 				var reasonLength:int = readInt();
 				var reason:ByteArray = new ByteArray();
 				readBytes( reason, 0, reasonLength );
+				
 				throw new ConnectionError( reason.toString() );
 				break;
 			
@@ -267,7 +268,7 @@ public class RFBProtocol extends Socket {
 	}
 	
 	public function readU8():uint
-        {
+	{
 		return readUnsignedByte();
 	}
 

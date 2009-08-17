@@ -32,6 +32,7 @@ import flash.system.Security;
 import flash.utils.ByteArray;
 
 import fvnc.errors.ConnectionError;
+import fvnc.events.FVNCErrorEvent;
 import fvnc.events.FVNCEvent;
 import fvnc.rfb.PixelFormat;
 import fvnc.rfb.RFBParser;
@@ -64,6 +65,13 @@ import org.osflash.cryptography.DES;
  * @eventType fvnc.events.FVNCEvent.INVALID_PASSWORD
  */
 [Event( name="invalidPassword", type="fvnc.events.FVNCEvent" )]
+
+/** 
+ * Broadcast when a connection could not be estabiled with the server.
+ * 
+ * @eventType fvnc.events.FVNCErrorEvent.CONNECTION_ERROR
+ */
+[Event( name="connectionError", type="fvnc.events.FVNCErrorEvent" )]
 
 /**
  * Broadcast only when the client and server are disconnected.
@@ -359,14 +367,20 @@ public class FVNC extends Canvas
 	 */
 	protected function handleIOError( event:IOErrorEvent ):void
 	{
+		var errorText:String = "";
+		
+		// Determine what the error message should be based on the connection state
 		if ( state == ProtocolState.NOT_CONNECTED )
 		{
-			throw new ConnectionError( "Could not connect to " + host + " on port " + port );
+			errorText = "Could not connect to " + host + " on port " + port;
 		}
 		else
 		{
-			throw new Error( event.text );
+			errorText = event.text;
 		}
+		
+		// Inform listeners of the error condition
+		dispatchEvent( new FVNCErrorEvent( FVNCErrorEvent.CONNECTION_ERROR, false, true, errorText ) );
 	}
 	
 	/**
@@ -411,7 +425,10 @@ public class FVNC extends Canvas
 		catch ( ce:ConnectionError )
 		{
 			close();
-			throw new ConnectionError( ce.message );
+			
+			// Inform listeners of the connection error when reading authentication
+			dispatchEvent( new FVNCErrorEvent( FVNCErrorEvent.CONNECTION_ERROR, false, true, ce.message ) );
+			return;
 		}
 	
 		switch ( authScheme )
@@ -425,7 +442,8 @@ public class FVNC extends Canvas
 				
 				// Force an onSocketData if the server gave us back
 				// all 20 bytes instead of a separate 4 + 16
-				if ( rfb.bytesAvailable > 0 ) {
+				if ( rfb.bytesAvailable > 0 )
+				{
 					handleSocketData( pe );
 				}
 				
@@ -520,12 +538,12 @@ public class FVNC extends Canvas
 		switch ( authResult )
 		{
 			case AuthenticationStatus.FAILED:
+				// Couldn't conect, so close the socket
+				close();
+				
 				// Let the user know the authentication failed
 				dispatchEvent( new FVNCEvent( FVNCEvent.INVALID_PASSWORD ) );
 				
-				// Couldn't conect, so close the socket
-				close();
-				//throw new ConnectionError( "Authentication failed." );
 				break;
 			
 			case AuthenticationStatus.OK:
@@ -537,9 +555,11 @@ public class FVNC extends Canvas
 				break;
 				
 			default:
+				var errorText:String = "Unknown authentication result: " + authResult;
+				dispatchEvent( new FVNCErrorEvent( FVNCErrorEvent.CONNECTION_ERROR, false, true, errorText ) );
+				
 				// Couldn't conect, so close the socket
 				close();
-				throw new ConnectionError( "Unknown authentication result: " + authResult );
 		}
 	}
 	
@@ -775,12 +795,6 @@ public class FVNC extends Canvas
 	 */
 	public function close():void
 	{
-		// Clear the socket
-		state = ProtocolState.NOT_CONNECTED;
-		rfb.close();
-		rfb = null;
-		parser = null;
-		
 		// Remove event listeners that might've been assigned if we were
 		// previously in the connected state
 		// Whenever the mouse moves, let the server know
@@ -788,8 +802,21 @@ public class FVNC extends Canvas
 		remoteScreen.removeEventListener( MouseEvent.MOUSE_DOWN, handleMouseEvent );
 		remoteScreen.removeEventListener( MouseEvent.MOUSE_UP, handleMouseEvent );
 		remoteScreen.removeEventListener( MouseEvent.MOUSE_WHEEL, handleMouseEvent );
+		
+		rfb.removeEventListener( Event.CONNECT , handleConnect );
+		rfb.removeEventListener( ProgressEvent.SOCKET_DATA , handleSocketData );
+		rfb.removeEventListener( IOErrorEvent.IO_ERROR, handleIOError );
+		rfb.removeEventListener( Event.CLOSE, handleClose );
+		
 		removeEventListener( KeyboardEvent.KEY_UP, handleKeyUp );
 		removeEventListener( KeyboardEvent.KEY_DOWN, handleKeyDown );
+		removeEventListener( Event.ENTER_FRAME, processServerMessages );
+		
+		// Clear the socket
+		state = ProtocolState.NOT_CONNECTED;
+		rfb.close();
+		rfb = null;
+		parser = null;
 		
 		dispatchEvent( new Event( Event.CLOSE ) );
 	}

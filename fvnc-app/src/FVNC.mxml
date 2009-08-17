@@ -25,6 +25,7 @@
 	
 	<mx:Script>
 		<![CDATA[
+			import fvnc.events.FVNCErrorEvent;
 			import mx.controls.Alert;
 			import fvnc.view.AuthenticationPanel;
 			import mx.managers.PopUpManager;
@@ -40,24 +41,11 @@
 				remoteScreen.port = event.port;
 				remoteScreen.fitToScreen = event.fitToScreen;
 				
-				// TODO: Try/catch doesn't work for connection here because
-				// the socket is async.  Better approach is going to be to have
-				// the FVNC component dispatch a ConnectionErrorEvent when
-				// an error is detected.
-				try
-				{
-					remoteScreen.connect();
-					connectionPanel.connected = true;
+				remoteScreen.connect();
+				connectionPanel.connected = true;
 					
-					// Focus the VNC screen so keyboard events are registered
-					stage.focus = remoteScreen;	
-				}
-				catch ( e:Error )
-				{
-					Alert.show( e.message, "Error" );
-					connectionPanel.connected = false;
-				}
-				
+				// Focus the VNC screen so keyboard events are registered
+				stage.focus = remoteScreen;
 			}
 			
 			/**
@@ -78,6 +66,17 @@
 				PopUpManager.centerPopUp( popup );
 				
 				popup.addEventListener( "submit", handlePasswordEntered, false, 0, true );
+			}
+			
+			/**
+			 * 
+			 */
+			private function handleConnectionError( event:FVNCErrorEvent ):void
+			{
+				Alert.show( event.text, "Connection Error", Alert.OK );
+				
+				remoteScreen.close();
+				connectionPanel.connected = false;
 			}
 			
 			/**
@@ -103,6 +102,7 @@
 	-->
 	<fvnc:FVNC id="remoteScreen" width="100%" height="100%"
 		passwordRequired="handlePasswordRequired( event );"
+		connectionError="handleConnectionError( event );"
 		keyFocusChange="event.preventDefault();"
 		mouseFocusChange="event.preventDefault();" />
 	

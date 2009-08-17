@@ -27,10 +27,10 @@ import flash.events.Event;
  */
 public class FVNCEvent extends Event 
 {
-	/** Static constant for the event type. */
+	/** Static constant for the invalid password event type. */
 	public static const INVALID_PASSWORD:String = "invalidPassword";
 	
-	/** Static constant for the event type. */
+	/** Static constant for the password required event type. */
 	public static const PASSWORD_REQUIRED:String = "passwordRequired";
 
 	/**
