@@ -795,30 +795,32 @@ public class FVNC extends Canvas
 	 */
 	public function close():void
 	{
-		// Remove event listeners that might've been assigned if we were
-		// previously in the connected state
-		// Whenever the mouse moves, let the server know
-		remoteScreen.removeEventListener( MouseEvent.MOUSE_MOVE, handleMouseEvent );
-		remoteScreen.removeEventListener( MouseEvent.MOUSE_DOWN, handleMouseEvent );
-		remoteScreen.removeEventListener( MouseEvent.MOUSE_UP, handleMouseEvent );
-		remoteScreen.removeEventListener( MouseEvent.MOUSE_WHEEL, handleMouseEvent );
-		
-		rfb.removeEventListener( Event.CONNECT , handleConnect );
-		rfb.removeEventListener( ProgressEvent.SOCKET_DATA , handleSocketData );
-		rfb.removeEventListener( IOErrorEvent.IO_ERROR, handleIOError );
-		rfb.removeEventListener( Event.CLOSE, handleClose );
-		
-		removeEventListener( KeyboardEvent.KEY_UP, handleKeyUp );
-		removeEventListener( KeyboardEvent.KEY_DOWN, handleKeyDown );
-		removeEventListener( Event.ENTER_FRAME, processServerMessages );
-		
-		// Clear the socket
-		state = ProtocolState.NOT_CONNECTED;
-		rfb.close();
-		rfb = null;
-		parser = null;
-		
-		dispatchEvent( new Event( Event.CLOSE ) );
+		if ( state != ProtocolState.NOT_CONNECTED )
+		{
+			// Remove event listeners that might've been assigned if we were
+			// previously in the connected state
+			remoteScreen.removeEventListener( MouseEvent.MOUSE_MOVE, handleMouseEvent );
+			remoteScreen.removeEventListener( MouseEvent.MOUSE_DOWN, handleMouseEvent );
+			remoteScreen.removeEventListener( MouseEvent.MOUSE_UP, handleMouseEvent );
+			remoteScreen.removeEventListener( MouseEvent.MOUSE_WHEEL, handleMouseEvent );
+			
+			rfb.removeEventListener( Event.CONNECT , handleConnect );
+			rfb.removeEventListener( ProgressEvent.SOCKET_DATA , handleSocketData );
+			rfb.removeEventListener( IOErrorEvent.IO_ERROR, handleIOError );
+			rfb.removeEventListener( Event.CLOSE, handleClose );
+			
+			removeEventListener( KeyboardEvent.KEY_UP, handleKeyUp );
+			removeEventListener( KeyboardEvent.KEY_DOWN, handleKeyDown );
+			removeEventListener( Event.ENTER_FRAME, processServerMessages );
+			
+			// Clear the socket
+			state = ProtocolState.NOT_CONNECTED;
+			rfb.close();
+			rfb = null;
+			parser = null;
+			
+			dispatchEvent( new Event( Event.CLOSE ) );
+		}
 	}
 	
 	// TODO: This is probably better off in a "scaleContent" property

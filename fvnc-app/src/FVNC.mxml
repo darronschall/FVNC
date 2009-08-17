@@ -71,6 +71,16 @@
 			/**
 			 * 
 			 */
+			private function handleInvalidPassword( event:FVNCEvent ):void
+			{
+				Alert.show( "The password entered was invalid.", "Invalid Password", Alert.OK );
+				
+				connectionPanel.connected = false;
+			}
+			
+			/**
+			 * 
+			 */
 			private function handleConnectionError( event:FVNCErrorEvent ):void
 			{
 				Alert.show( event.text, "Connection Error", Alert.OK );
@@ -102,6 +112,7 @@
 	-->
 	<fvnc:FVNC id="remoteScreen" width="100%" height="100%"
 		passwordRequired="handlePasswordRequired( event );"
+		invalidPassword="handleInvalidPassword( event );"
 		connectionError="handleConnectionError( event );"
 		keyFocusChange="event.preventDefault();"
 		mouseFocusChange="event.preventDefault();" />
