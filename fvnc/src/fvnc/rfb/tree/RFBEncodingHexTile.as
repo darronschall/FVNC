@@ -6,12 +6,12 @@
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
@@ -28,35 +28,35 @@ import flash.geom.Rectangle;
 
 import fvnc.rfb.RFBProtocol;
 
-/** 
+/**
  * Hextile encoding
  */
 public class RFBEncodingHexTile extends RFBEncodingTileData
 {
-	/** The type of encoding for the tile */	
+	/** The type of encoding for the tile */
 	private var subEncoding:int = -1;
 
 	private var background:uint;
 	private var readBackground:Boolean = false;
-	
+
 	private var foreground:uint;
 	private var readForeground:Boolean = false;
-	
+
 	private var numberOfSubrectangles:int = -1;
 	private var subrectanglesProcessed:int = 0;
 
 	private var subrectPixelValue:uint = 0;
 	private var readSubrectPixelValue:Boolean = false;
-	
+
 	/** Storage for the last x location when reading raw data */
 	private var rawX:uint = 0;
-	
+
 	/** Storage for the last y location when reading raw data */
 	private var rawY:uint = 0;
-	
+
 	private var xyPosition:int = -1;
 	private var widthHeight:int = -1;
-	
+
 
 	/**
 	 * Constructor
@@ -64,14 +64,14 @@ public class RFBEncodingHexTile extends RFBEncodingTileData
 	public function RFBEncodingHexTile( parent:RFBRectangle )
 	{
 		super( parent );
-		
+
 		pixels = new BitmapData( parent.width, parent.height, false, 0x000000 );
 	}
-	
+
 	/**
 	 * Create the node.  If the socket doesn't contain enough information, defer
 	 * computation until later and raise an exception.
-	 * 
+	 *
 	 * @return The next node to be processed or null if this message is complete
 	 */
 	override public function buildNode( rfb:RFBProtocol ):RFBNode
@@ -80,14 +80,14 @@ public class RFBEncodingHexTile extends RFBEncodingTileData
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	override public function execute( screenImageData:BitmapData ):void
 	{
 		var container:RFBRectangle = RFBRectangle( parent );
 		var dstPoint:Point = new Point( container.x, container.y );
 		screenImageData.copyPixels( pixels, pixels.rect, dstPoint );
-		
+
 		pixels.dispose();
 	}
 
@@ -117,7 +117,7 @@ public class RFBEncodingHexTile extends RFBEncodingTileData
 			return;
 		}
 
-		// Check if we have a don't have background yet and if we need one, then 
+		// Check if we have a don't have background yet and if we need one, then
 		// get one if so
 		if ( !readBackground )
 		{
@@ -131,7 +131,7 @@ public class RFBEncodingHexTile extends RFBEncodingTileData
 			pixels.fillRect( new Rectangle( currentX, currentY, tileWidth, tileHeight ), background );
 		}
 
-		// Check if we have a don't have foreground yet and if we need one, then 
+		// Check if we have a don't have foreground yet and if we need one, then
 		// get one if so
 		if ( !readForeground )
 		{
@@ -170,7 +170,7 @@ public class RFBEncodingHexTile extends RFBEncodingTileData
 		numberOfSubrectangles = -1;
 		subEncoding = -1;
 	}
-	
+
 	private function handleSubRect( rfb:RFBProtocol ):void
 	{
 		// If we have a different color, use that
@@ -203,8 +203,8 @@ public class RFBEncodingHexTile extends RFBEncodingTileData
 		var fillHeight:uint = ( widthHeight & 0x0F ) + 1;
 
 		// Fill the foreground color in
-		pixels.fillRect ( new Rectangle( fillX + currentX, fillY + currentY, 
-										 fillWidth, fillHeight ), 
+		pixels.fillRect ( new Rectangle( fillX + currentX, fillY + currentY,
+										 fillWidth, fillHeight ),
 						  subrectPixelValue );
 
 		// Clear out our values
