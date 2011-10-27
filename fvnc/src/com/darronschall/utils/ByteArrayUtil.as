@@ -1,23 +1,23 @@
 
 package com.darronschall.utils {
-	
+
 	import flash.utils.ByteArray;
 	import com.darronschall.utils.NumberUtil;
-	
+
 	/**
 	 * Utility class to provide helper methods for ByteArray
 	 */
 	final public class ByteArrayUtil {
-		
+
 		/**
 		 * Output the contents of a ByteArray as a string
 		 */
 		public static function dump( bytes:ByteArray, asHex:Boolean = true ):String {
 			var output:String = "";
 			var len:uint = bytes.length;
-			
+
 			bytes.position = 0;
-			
+
 			for (var i:int = 0; i < len; i++) {
 				// Append the byte with a space for some separation
 				if ( asHex ) {
@@ -26,27 +26,27 @@ package com.darronschall.utils {
 					output += bytes.readByte() + " ";
 				}
 			}
-			
+
 			return output;
-		}	
-		
-		/** 
-		 * "Bitwise addition modulo 2", xor two byte arrays that are 
+		}
+
+		/**
+		 * "Bitwise addition modulo 2", xor two byte arrays that are
 		 * assumed to be the same length.
 		 */
 		public static function xor(a:ByteArray, b:ByteArray):ByteArray {
 			var c:ByteArray = new ByteArray();
 			var len:int = a.length;
 			var i:int;
-			
+
 			for (i = 0; i < a.length; i++) {
 				c.writeByte( a[i] ^ b[i] );
 			}
 			return c;
 		}
-		
-		/** 
-		 * Adjusts bit number n in a ByteArray. 
+
+		/**
+		 * Adjusts bit number n in a ByteArray.
 		 */
 		public static function sb( b:ByteArray, n:int, on:Boolean ):void {
 			// Determine if the bit should be set (on) or not
@@ -62,15 +62,15 @@ package com.darronschall.utils {
 				b[n >> 3] = b[ n >> 3] & ( ~0 - ( 1 << ( 7 - ( n & 0x07 ) ) ) );
 			}
 		}
-		
-		/** 
+
+		/**
 		 * Gets bit number n from a ByteArray
 		 */
 		public static function gb( b:ByteArray, n:int ):Boolean {
 			// Extract the bit value and convert it to Boolean
 			return Boolean( ( b[n >> 3] >> ( 7 - ( n & 0x07 ) ) ) & 1 );
 		}
-		
+
 		/**
 		 * Parses a hex string into a ByteArray
 		 */
@@ -82,30 +82,30 @@ package com.darronschall.utils {
 			bytes.writeInt( intValue );
 			return bytes;
 		}
-		
+
 		/** Convert b bits of a to a ByteArray of length n */
 		public static function numberToByteArray( a:Number, n:int, b:int):ByteArray {
 			var t:ByteArray = new ByteArray();
 			var i:int;
-			
+
 			t.length = n;
 			for ( i = 0; i < b; i++ ) {
 				sb( t, i, NumberUtil.gb( a, i, b ) );
 			}
 			return t;
 		}
-		
+
 		/** Create a new ByteArray c that is the same as a followed by b */
 		public static function concat( a:ByteArray, b:ByteArray ):ByteArray {
 			var c:ByteArray = new ByteArray();
 			c.length = a.length + b.length;
-			
+
 			a.position = 0;
 			b.position = 0;
-			
+
 			a.readBytes(c, 0, a.length);
 			b.readBytes(c, a.length, b.length);
-			
+
 			return c;
 		}
 	}

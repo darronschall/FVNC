@@ -1,13 +1,13 @@
 
 package com.darronschall.utils {
-	
+
 	/**
 	 * Utility class to provide helper methods for int
 	 */
 	 public final class IntUtil {
-	
-		/** 
-		 * Rotate first i bits in v n steps to the left. 
+
+		/**
+		 * Rotate first i bits in v n steps to the left.
 		 */
 		public static function rol( v:int, i:int, n:int ):int {
 			// Figure out the bits that will be rotated off the end
@@ -17,6 +17,6 @@ package com.darronschall.utils {
 			// Bring back in the bits that we lost
 			return v | off;
 		}
-		
+
 	}
-}		
+}

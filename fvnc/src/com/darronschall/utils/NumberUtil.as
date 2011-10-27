@@ -1,21 +1,21 @@
 
 package com.darronschall.utils {
-	
+
 	/**
 	 * Utility class to provide helper methods for Number
 	 */
 	 public final class NumberUtil {
-	
-		/** 
-		 * Gets bit number n from a number of i bits 
+
+		/**
+		 * Gets bit number n from a number of i bits
 		 */
 		public static function gb( a:Number, n:int, i:int ):Boolean {
 			// Extract the bit value and convert it to Boolean
 			return Boolean( ( a >> ( i - n - 1 ) ) & 1 );
 		}
-		
-		/** 
-		 * Adjusts bit number n in an int of i bits 
+
+		/**
+		 * Adjusts bit number n in an int of i bits
 		 */
 		public static function sb( a:Number, n:int, i:int, on:Boolean ):int {
 			// Should the bit be set or not?
@@ -29,4 +29,4 @@ package com.darronschall.utils {
 			}
 		}
 	}
-}		
+}

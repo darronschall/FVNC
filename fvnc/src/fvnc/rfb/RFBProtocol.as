@@ -6,17 +6,17 @@
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
- */	
+ */
 package fvnc.rfb
 {
 
@@ -41,32 +41,32 @@ public class RFBProtocol extends Socket {
 
 	/** The version supported */
 	public static const version:String = "RFB 003.003" + String.fromCharCode( 10 );
-	
+
 	/** The port we're connecting on */
 	private var port:uint;
-	
+
 	/** The host we're connecting to */
 	private var host:String;
-	
+
 	/** The major version # of the RFB protocol supported */
 	private var serverMajor:int;
-	
+
 	/** The minor version # of the RFB protocol supported */
 	private var serverMinor:int;
-	
+
 	// =============================================================
 	//  P I X E L    D A T A
 	// =============================================================
-	
+
 	/** Store the number of bytes per pixel for reading pixel data */
 	public var bytesPerPixel:uint;
-	
+
 	/** Determine how the pixel value is read (endian-ness is important!) */
 	public var pixelEndian:String;
 
 	/** The format that describes how the pixel data is encoded */
 	private var pixelFormat:PixelFormat;
-	
+
 	/** Red value for color shift when calculating real pixel value */
 	private var redShift:int;
 
@@ -86,31 +86,31 @@ public class RFBProtocol extends Socket {
 		this.host = host;
 		this.port = port;
 	}
-	
+
 	/** Read only access to the major version for the RFB server */
 	public function get majorVersion():int
 	{
 		return serverMajor;
 	}
-	
+
 	/** Read only access to the minor version for the RFB server */
 	public function get minorVersion():int
 	{
 		return serverMinor;
 	}
-		
+
 	/**
 	 * Reads the version information of the RFB protocol that the
 	 * server supports.
-	 */	
+	 */
 	public function readVersion():void
 	{
 		var b:ByteArray = new ByteArray();
-		
+
 		// Read 12 bytes from the socket and place in a byte array
 		// to inspect.
 		readBytes( b, 0, 12 );
-		
+
 		// Make sure we're connecting to an RFB server
 		if (   b[0] != 82				// R
 			|| b[1] != 70				// F
@@ -124,16 +124,16 @@ public class RFBProtocol extends Socket {
 			|| b[9] < 48 || b[9] > 57	// digit 0-9
 			|| b[10] < 48 || b[10] > 57	// digit 0-9
 			|| b[11] != 10 )			// <newline>
-		{			
-			
+		{
+
 			throw new Error("Host " + host + " port " + port + " is not an RFB server");
 		}
-		
+
 		// Extract the version number from the string digitis
 		serverMajor = (b[4] - 48) * 100 + (b[5] - 48) * 10 + (b[6] - 48);
 		serverMinor = (b[8] - 48) * 100 + (b[9] - 48) * 10 + (b[10] - 48);
 	}
-	
+
 	/**
 	 * Writes the version of RFB that we'll be using to communicate with the server
 	 */
@@ -141,19 +141,19 @@ public class RFBProtocol extends Socket {
 	{
 		// Write the version information
 		writeBytes( StringUtil.toByteArray( version ), 0, 12 );
-		
+
 		// After every write we need to flush() to ensure that the
 		// data is sent across to the server
 		flush();
 	}
-	
+
 	/**
 	 * Read the authentication required to start interacting with the server
 	 */
 	public function readAuthenticationScheme():int
 	{
 		var authScheme:int = readInt();
-		
+
 		// Determine the authentication scheme and act accordingly
 		switch ( authScheme ) {
 			case SecurityType.INVALID:
@@ -162,22 +162,22 @@ public class RFBProtocol extends Socket {
 				var reasonLength:int = readInt();
 				var reason:ByteArray = new ByteArray();
 				readBytes( reason, 0, reasonLength );
-				
+
 				throw new ConnectionError( reason.toString() );
 				break;
-			
+
 			case SecurityType.NONE:
 			case SecurityType.VNC_AUTHENTICATION:
 				// Nothing extra to do here, just return the authentication scheme
 				return authScheme;
-				
+
 			default:
 				// Error - not sure what the server sent?
 				throw new Error( "Unknown authentication scheme from RFB "
 					+ "server: " + authScheme );
 		}
 	}
-	
+
 	/**
 	 * For VNC Authentication, we're issued a 16 byte challenge that we
 	 * need to encrypt with a password via DES and send back the encrypted
@@ -192,7 +192,7 @@ public class RFBProtocol extends Socket {
 		readBytes( challenge, 0, 16 );
 		return challenge;
 	}
-	
+
 	/**
 	 * Sends the authentication challenege (that was encrypted
 	 * with a password) back to the server to verify that the user
@@ -205,7 +205,7 @@ public class RFBProtocol extends Socket {
 		// Send the data off to the server
 		flush();
 	}
-	
+
 	/**
 	 * Writes the client initialization to the server
 	 *
@@ -220,18 +220,18 @@ public class RFBProtocol extends Socket {
 		// Send the data off to the server
 		flush();
 	}
-	
+
 	/**
 	 * Reads the initialization data from the server
 	 */
 	public function readServerInit():ServerInit
 	{
 		var serverInit:ServerInit = new ServerInit();
-		pixelFormat = new PixelFormat();	
-		
+		pixelFormat = new PixelFormat();
+
 		serverInit.frameBufferWidth = readUnsignedShort();
 		serverInit.frameBufferHeight = readUnsignedShort();
-		
+
 		// Read all of the data for the pixel format
 		pixelFormat.bitsPerPixel = readByte();
 		pixelFormat.depth = readByte();
@@ -243,30 +243,30 @@ public class RFBProtocol extends Socket {
 		pixelFormat.redShift = readByte();
 		pixelFormat.greenShift = readByte();
 		pixelFormat.blueShift = readByte();
-		
+
 		// Calculate values needed to display the correct colors
 		calculateColors( pixelFormat );
-		
+
 		// skip over padding
 		readByte();
 		readByte();
 		readByte();
-		
+
 		// Read the length of the server name
 		serverInit.nameLength = readInt();
-		
+
 		return serverInit;
 	}
-	
+
 	public function readServerName( nameLength:int ):String
 	{
 		// Read the name of the server we're connected to
 		var name:ByteArray = new ByteArray();
 		readBytes( name, 0, nameLength );
-		
+
 		return name.toString();
 	}
-	
+
 	public function readU8():uint
 	{
 		return readUnsignedByte();
@@ -281,7 +281,7 @@ public class RFBProtocol extends Socket {
 	{
 		return readInt();
 	}
-	
+
 	public function readU32():int
 	{
 		return readUnsignedInt();
@@ -296,7 +296,7 @@ public class RFBProtocol extends Socket {
 		//var bytes:ByteArray = new ByteArray();
 		//readBytes( bytes, 0, bytesPerPixel );
 		//bytes.endian = pixelEndian;
-		switch ( bytesPerPixel ) 
+		switch ( bytesPerPixel )
 		{
 			case 1: return convertPixelData( readByte() );
 			case 2: return convertPixelData( readShort() );
@@ -305,7 +305,7 @@ public class RFBProtocol extends Socket {
 				throw new Error( "Invalid bytesPerPixel: " + bytesPerPixel );
 		}
 	}
-	
+
 	/**
 	 * Calculate color values, the amount we need to shift by in order to
 	 * display the pixel data correctly.
@@ -321,7 +321,7 @@ public class RFBProtocol extends Socket {
 			}
 		}
 		redShift = 24 - t;
-		
+
 		for ( t = 0; t < 32; t++ )
 		{
 			if ( ( ( 1 << t ) & pixelFormat.greenMax ) == 0 )
@@ -330,7 +330,7 @@ public class RFBProtocol extends Socket {
 			}
 		}
 		greenShift = 16 - t;
-		
+
 		for ( t = 0; t < 32; t++ )
 		{
 			if ( ( ( 1 << t ) & pixelFormat.blueMax ) == 0 )
@@ -340,7 +340,7 @@ public class RFBProtocol extends Socket {
 		}
 		blueShift = 8 - t;
 	}
-	
+
 	/**
 	 * Based on the pixelFormat, this method will convert the
 	 * data for a pixel into an actual RGB color value to display.
@@ -353,11 +353,11 @@ public class RFBProtocol extends Socket {
 				| ( ( ( data >> pixelFormat.greenShift ) & pixelFormat.greenMax ) << greenShift )
 				| ( ( ( data >> pixelFormat.blueShift ) & pixelFormat.blueMax ) << blueShift )
 		}
-		
+
 		// TODO: Need to handle this case when true color isn't used
 		return 0;
 	}
-	
+
 	/**
 	 * Reads a color entry from the server
 	 *
@@ -374,7 +374,7 @@ public class RFBProtocol extends Socket {
 		o.blue = readUnsignedShort();
 		return o;
 	}
-	
+
 	/**
 	 * Reads a server cut text message from the server
 	 *
@@ -386,15 +386,15 @@ public class RFBProtocol extends Socket {
 		readByte();
 		readByte();
 		readByte();
-		
+
 		var length:uint = readUnsignedInt();
 		var text:ByteArray = new ByteArray();
 		readBytes( text, 0, length );
 		return text.toString();
 	}
-	
+
 	/**
-	 * Sets the format in which pixel values should be sent in 
+	 * Sets the format in which pixel values should be sent in
 	 * FrameBufferUpdate messages.
 	 */
 	public function writeSetPixelFormat( pixelFormat:PixelFormat ):void
@@ -402,10 +402,10 @@ public class RFBProtocol extends Socket {
 		this.pixelFormat = pixelFormat;
 		bytesPerPixel = pixelFormat.bitsPerPixel / 8;
 		pixelEndian = pixelFormat.bigEndian ? Endian.BIG_ENDIAN : Endian.LITTLE_ENDIAN;
-		
+
 		// Calculate values needed to display the correct colors
 		calculateColors( pixelFormat );
-		
+
 		// Let the server know what kind of message is coming from the client
 		writeByte( Client.SET_PIXEL_FORMAT );
 
@@ -413,7 +413,7 @@ public class RFBProtocol extends Socket {
 		writeByte( 0 );
 		writeByte( 0 );
 		writeByte( 0 );
-		
+
 		// Write the pixel format data in the socket
 		writeByte( pixelFormat.bitsPerPixel );
 		writeByte( pixelFormat.depth );
@@ -425,22 +425,22 @@ public class RFBProtocol extends Socket {
 		writeByte( pixelFormat.redShift );
 		writeByte( pixelFormat.greenShift );
 		writeByte( pixelFormat.blueShift );
-		
+
 		// Write padding
 		writeByte( 0 );
 		writeByte( 0 );
 		writeByte( 0 );
-		
+
 		// Send the data off to the server
 		flush();
 	}
-	
+
 	/**
-	 * Sets the encoding types in which pixel data can be sent by 
+	 * Sets the encoding types in which pixel data can be sent by
 	 * the server. The order of the encoding types given in this message
 	 * is a hint by the client as to its preference (the first encoding
 	 * specified being most preferred). The server may or may not choose
-	 * to make use of this hint. Pixel data may always be sent in raw 
+	 * to make use of this hint. Pixel data may always be sent in raw
 	 * encoding even if not specified explicitly here.
 	 *
 	 * @param encodings An array of int corresponding to values
@@ -450,24 +450,24 @@ public class RFBProtocol extends Socket {
 	{
 		// Let the server know what kind of message is coming from the client
 		writeByte( Client.SET_ENCODINGS );
-		
+
 		// Write padding
 		writeByte( 0 );
-		
+
 		// Let the server know the number of encodings being used
 		var length:uint = encodings.length;
 		writeShort( length  );
-		
+
 		// Write out all of the encodings that are supported
 		for ( var i:uint = 0; i < length; i++ )
 		{
 			writeInt( encodings[i] );
 		}
-		
+
 		// Send the data off to the server
 		flush();
 	}
-	
+
 	/**
 	 * Request a certain area of the screen to be refreshed from the server
 	 * so the client can draw it correctly.
@@ -481,19 +481,19 @@ public class RFBProtocol extends Socket {
 	{
 		// Let the server know what kind of message is coming from the client
 		writeByte( Client.FRAMEBUFFER_UPDATE_REQUEST );
-		
+
 		writeByte( incremental ? 1 : 0 );
-		
+
 		// Write the rectangle area that the client wants updated from the server
 		writeShort( rect.x );
 		writeShort( rect.y );
 		writeShort( rect.width );
 		writeShort( rect.height );
-		
+
 		// Send the data off to the server
 		flush();
 	}
-	
+
 	/**
 	 * Indicate that a key was pressed on the client
 	 */
@@ -508,19 +508,19 @@ public class RFBProtocol extends Socket {
 		{
 			return;
 		}
-		
+
 		// Handle sending modifiers as a separate key press
 		writeKeyModifiers( event );
-		
+
 		// Get the keySym value based on the key pressed
 		var keysym:uint = getKeySym( event );
 		// Write the key event into the socket and note it was a key down
 		writeKeyEvent( keysym, true );
-		
+
 		// Send the data off to the server
 		flush();
 	}
-	
+
 	/**
 	 * Indicate that a key was released on the client
 	 */
@@ -536,19 +536,19 @@ public class RFBProtocol extends Socket {
 		{
 			return;
 		}
-		
+
 		// Handle sending modifiers as a separate key press
 		writeKeyModifiers( event );
-		
+
 		// Get the keySym value based on the key pressed
 		var keysym:uint = getKeySym( event );
 		// Write the key event into the socket and note it was a key up
 		writeKeyEvent( keysym, false );
-					
+
 		// Send the data off to the server
 		flush();
 	}
-	
+
 	/**
 	 * Write the key modifiers to the server, which include control,
 	 * shift, alt,  and indicate if the left or right one was
@@ -559,20 +559,20 @@ public class RFBProtocol extends Socket {
 		if ( event.shiftKey )
 		{
 			// Determine which shift key was pressed
-			writeKeyEvent( event.keyLocation == KeyLocation.LEFT ? 0xFFE1 : 0xFFE2, false );	
+			writeKeyEvent( event.keyLocation == KeyLocation.LEFT ? 0xFFE1 : 0xFFE2, false );
 		}
 		else if ( event.ctrlKey )
 		{
 			// Determine which control key was pressed
-			writeKeyEvent( event.keyLocation == KeyLocation.LEFT ? 0xFFE3 : 0xFFE4, false );	
+			writeKeyEvent( event.keyLocation == KeyLocation.LEFT ? 0xFFE3 : 0xFFE4, false );
 		}
 		else if ( event.altKey )
 		{
 			// Determine which alt key was pressed
-			writeKeyEvent( event.keyLocation == KeyLocation.LEFT ? 0xFFE9 : 0xFFEA, false );	
+			writeKeyEvent( event.keyLocation == KeyLocation.LEFT ? 0xFFE9 : 0xFFEA, false );
 		}
 	}
-	
+
 	/**
 	 * Returns the keysym value based on the key that was pressed
 	 * (or released) as indicated by the KeyboardEvent.
@@ -580,9 +580,9 @@ public class RFBProtocol extends Socket {
 	private function getKeySym( event:KeyboardEvent ):uint
 	{
 		var keysym:uint;
-		
+
 		keysym = event.keyCode;
-		
+
 		// Check for the common keys and convert their keysym values
 		switch ( keysym ) {
 			case Keyboard.BACKSPACE : keysym = 0xFF08; break;
@@ -611,17 +611,17 @@ public class RFBProtocol extends Socket {
 			case Keyboard.F10  		: keysym = 0xFFC7; break;
 			case Keyboard.F11  		: keysym = 0xFFC8; break;
 			case Keyboard.F12  		: keysym = 0xFFC9; break;
-			
+
 			default:
 				// If not one of the keys above, use the charCode
 				// which will differentiate between 'A' and 'a' when
 				// sending "the a key was pressed" to the server.
 				keysym = event.charCode;
 		}
-		
-		return keysym;	
+
+		return keysym;
 	}
-	
+
 	/**
 	 * Indicate that a key was pressed or released
 	 * on the client.
@@ -629,19 +629,19 @@ public class RFBProtocol extends Socket {
 	private function writeKeyEvent( keysym:uint, down:Boolean ):void {
 		// Let the server know what kind of message is coming from the client
 		writeByte( Client.KEY_EVENT );
-		
+
 		writeByte( down ? 1 : 0 );
-		
+
 		// Write padding
 		writeByte( 0 );
 		writeByte( 0 );
-		
+
 		writeUnsignedInt( keysym );
-		
+
 		// Send the data off to the server
 		flush();
 	}
-	
+
 	/**
 	 * Write either pointer movement or interaction
 	 * to the server.
@@ -650,16 +650,16 @@ public class RFBProtocol extends Socket {
 	{
 		// Let the server know what kind of message is coming from the client
 		writeByte( Client.POINTER_EVENT );
-		
+
 		var pointerMask:uint = 0;
-		
+
 		// Check for the left mouse button being down
 		if ( event.buttonDown )
 		{
 			pointerMask = 1;
 		}
 		// TODO: What do we do about middle and right mouse button?
-		
+
 		// Check for Mouse Scroll
 		if ( event.delta < 0 )
 		{
@@ -671,19 +671,19 @@ public class RFBProtocol extends Socket {
 			// scroll up - button "4"
 			pointerMask |= 0x04;
 		}
-		
+
 		writeByte( pointerMask );
-		
-		// Write the location of the mouse pointer, which is 
+
+		// Write the location of the mouse pointer, which is
 		// simply the local x and y location in the remoteScreen that
 		// generated the event.
 		writeShort( event.localX + 1 );
 		writeShort( event.localY + 1 );
-		
+
 		// Send the data off to the server
 		flush();
 	}
-	
+
 	/**
 	 * Let the server know that the client has new
 	 * text in the clipboard.
@@ -692,17 +692,17 @@ public class RFBProtocol extends Socket {
 	{
 		// Let the server know what kind of message is coming from the client
 		writeByte( Client.CUT_TEXT );
-		
+
 		// 3 bytes padding
 		writeByte( 0 );
 		writeByte( 0 );
 		writeByte( 0 );
-		
+
 		// length
 		writeUnsignedInt( text.length );
 		// Can't write UTF bytes as this is not supported by RFB
 		//writeUTFBytes( text );
-		
+
 		// Convert the string to an array of bytes to write
 		var textBytes:ByteArray = new ByteArray();
 		for ( var i:uint = 0; i < text.length; i++ )
@@ -710,10 +710,10 @@ public class RFBProtocol extends Socket {
 			textBytes.writeByte( text.charCodeAt( i ) );
 		}
 		writeBytes( textBytes );
-		
+
 		// Send the data off to the server
 		flush();
 	}
-	
+
 } // end class
 } // end package
